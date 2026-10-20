@@ -1,0 +1,15 @@
+{
+	"schemaVersion": 1,
+	"id": "reactivemusic-test",
+	"version": "1.0.0",
+	"name": "Reactive Music Tests",
+	"environment": "client",
+	"entrypoints": {
+		"fabric-client-gametest": [
+			"circuitlord.reactivemusic.ReactiveMusicClientGameTest"
+		]
+	},
+	"depends": {
+		"reactivemusic": "*"
+	}
+}

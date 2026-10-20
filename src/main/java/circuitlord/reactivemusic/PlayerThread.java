@@ -1,13 +1,13 @@
 package circuitlord.reactivemusic;
 
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.GameOptions;
-import net.minecraft.sound.SoundCategory;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Options;
+import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.sounds.SoundSource;
 import rm_javazoom.jl.player.AudioDevice;
 import rm_javazoom.jl.player.JavaSoundAudioDevice;
 import rm_javazoom.jl.player.advanced.AdvancedPlayer;
-import net.minecraft.text.TranslatableTextContent;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -157,18 +157,19 @@ public class PlayerThread extends Thread {
 	
 	public void processRealGain() {
 
-		var client = MinecraftClient.getInstance();
+		var client = Minecraft.getInstance();
 
-		GameOptions options = MinecraftClient.getInstance().options;
+		Options options = Minecraft.getInstance().options;
 
 		boolean musicOptionsOpen = false;
 
 		// Try to find the music options menu
-		TranslatableTextContent ScreenTitleContent = null;
-		if (client.currentScreen != null && client.currentScreen.getTitle() != null && client.currentScreen.getTitle().getContent() != null
-			&& client.currentScreen.getTitle().getContent() instanceof TranslatableTextContent) {
+		TranslatableContents ScreenTitleContent = null;
+		var screen = client.gui.screen();
+		if (screen != null && screen.getTitle() != null && screen.getTitle().getContents() != null
+			&& screen.getTitle().getContents() instanceof TranslatableContents) {
 
-			ScreenTitleContent = (TranslatableTextContent) client.currentScreen.getTitle().getContent();
+			ScreenTitleContent = (TranslatableContents) screen.getTitle().getContents();
 
 			if (ScreenTitleContent != null) {
 				musicOptionsOpen = ScreenTitleContent.getKey().equals("options.sounds.title");
@@ -177,7 +178,7 @@ public class PlayerThread extends Thread {
 
 
 		boolean doQuietMusic =  client.isPaused()
-				&& client.world != null
+				&& client.level != null
 				&& !musicOptionsOpen;
 
 
@@ -185,7 +186,7 @@ public class PlayerThread extends Thread {
         quietPercentage = MyMath.lerpConstant(quietPercentage, targetQuietMusicPercentage, QUIET_VOLUME_LERP_RATE);
 
 		
-		float minecraftGain = options.getSoundVolume(SoundCategory.MUSIC) * options.getSoundVolume(SoundCategory.MASTER);
+		float minecraftGain = options.getSoundSourceVolume(SoundSource.MUSIC) * options.getSoundSourceVolume(SoundSource.MASTER);
 
 		// my jank way of changing the volume curve to be less drastic
 		float minecraftDistFromMax = 1.0f - minecraftGain;

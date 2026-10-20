@@ -1,0 +1,65 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+base {
+	archivesName = 'reactivemusic'
+}
+
+repositories {
+	maven {
+		name = 'TerraformersMC'
+		url = 'https://maven.terraformersmc.com/releases/'
+	}
+}
+
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "reactivemusic-test"
+		enableGameTests = false
+		enableClientGameTests = true
+		eula = true
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+
+	// Other mods for the client game tests: ./gradlew runClientGameTest -PextraTestMods=/path/a.jar:/path/b.jar
+	def extraTestMods = providers.gradleProperty('extraTestMods')
+	if (extraTestMods.isPresent()) {
+		gametestRuntimeOnly files(extraTestMods.get().split(File.pathSeparator))
+	}
+}
+
+processResources {
+	def version = project.version
+	def minecraftVersion = project.minecraft_version
+	inputs.property "version", version
+	inputs.property "minecraft_version", minecraftVersion
+
+	filesMatching("fabric.mod.json") {
+		expand "version": version, "minecraft_version": minecraftVersion
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.encoding = "UTF-8"
+	it.options.release = 25
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+	from("LICENSE") {
+		rename { "${it}_reactivemusic" }
+	}
+}
