@@ -103,17 +103,19 @@ public class JavaSoundAudioDevice extends AudioDeviceBase
 			Line line = AudioSystem.getLine(getSourceLineInfo());
             if (line instanceof SourceDataLine)
             {
-         		source = (SourceDataLine)line;
+         		SourceDataLine openedLine = (SourceDataLine)line;
                 //source.open(fmt, millisecondsToBytes(fmt, 2000));
-				source.open(fmt);
+				openedLine.open(fmt);
                 /*
                 if (source.isControlSupported(FloatControl.Type.MASTER_GAIN))
                 {
 					FloatControl c = (FloatControl)source.getControl(FloatControl.Type.MASTER_GAIN);
                     c.setValue(c.getMaximum());
                 }*/
-                source.start();
+				// the game thread calls setGain() too, and a line that isn't open yet has no gain control
+				source = openedLine;
          		setGain(PlayerThread.realGain); // XXX ~Vazkii
+                source.start();
             }
         } catch (RuntimeException ex)
           {
