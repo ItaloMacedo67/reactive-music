@@ -5,8 +5,13 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.client.gui.screens.Screen;
 
+import java.lang.management.ManagementFactory;
+
 public class ReactiveMusicClientGameTest implements FabricClientGameTest {
 	private static final int SONG_START_TIMEOUT = 20 * 30;
+	private static final int IDLE_MEASURE_TICKS = 100;
+	private static final double MAX_IDLE_CPU_SHARE = 0.05;
+	private static final String OVERWORLD = "minecraft:overworld";
 
 	@Override
 	public void runTest(ClientGameTestContext context) {
@@ -20,6 +25,7 @@ public class ReactiveMusicClientGameTest implements FabricClientGameTest {
 				world.getConnection().waitForChunksRender();
 				worldPlaysItsOwnMusic(context);
 				commandOpensConfigScreen(context);
+				idlePlayerThreadSleeps(context);
 			}
 		} finally {
 			context.runOnClient(client -> ReactiveMusic.config.debugModeEnabled = debugModeBefore);
@@ -49,8 +55,31 @@ public class ReactiveMusicClientGameTest implements FabricClientGameTest {
 		context.runOnClient(client -> client.gui.screen().onClose());
 	}
 
+	// No music in a blacklisted dimension, so the player thread has nothing to do
+	private static void idlePlayerThreadSleeps(ClientGameTestContext context) {
+		context.runOnClient(client -> ReactiveMusic.config.blacklistedDimensions.add(OVERWORLD));
+		try {
+			context.waitFor(client -> ReactiveMusic.thread.notQueuedOrPlaying(), SONG_START_TIMEOUT);
+			context.waitTicks(20);
+			long cpuBefore = playerThreadCpuNanos();
+			long wallBefore = System.nanoTime();
+			context.waitTicks(IDLE_MEASURE_TICKS);
+			long cpu = playerThreadCpuNanos() - cpuBefore;
+			long wall = System.nanoTime() - wallBefore;
+			if (cpu > wall * MAX_IDLE_CPU_SHARE) {
+				throw new AssertionError("the idle player thread used " + cpu / 1_000_000 + " ms of CPU in " + wall / 1_000_000 + " ms");
+			}
+		} finally {
+			context.runOnClient(client -> ReactiveMusic.config.blacklistedDimensions.remove(OVERWORLD));
+		}
+	}
+
 	private static boolean isPlayingWorldEntry() {
 		return ReactiveMusic.currentEntry != null && !ReactiveMusic.currentEntry.eventString.startsWith("MAIN_MENU");
+	}
+
+	private static long playerThreadCpuNanos() {
+		return ManagementFactory.getThreadMXBean().getThreadCpuTime(ReactiveMusic.thread.threadId());
 	}
 
 	private static boolean isConfigScreen(Screen screen) {

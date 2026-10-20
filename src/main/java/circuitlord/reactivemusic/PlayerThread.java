@@ -11,6 +11,7 @@ import rm_javazoom.jl.player.advanced.AdvancedPlayer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.locks.LockSupport;
 
 public class PlayerThread extends Thread {
 
@@ -97,6 +98,10 @@ public class PlayerThread extends Thread {
 					player.play();
 
 				}
+				else if (!queued) {
+					// sleep until play() hands us a song, spinning here kept a whole CPU core busy between songs
+					LockSupport.park(this);
+				}
 
 			}
 		} catch(Exception e) {
@@ -131,6 +136,7 @@ public class PlayerThread extends Thread {
 
 		currentSong = song;
 		queued = true;
+		LockSupport.unpark(this);
 	}
 	
 /*	public float getGain() {
