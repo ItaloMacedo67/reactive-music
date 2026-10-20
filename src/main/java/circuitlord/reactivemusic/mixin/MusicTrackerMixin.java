@@ -1,26 +1,24 @@
 package circuitlord.reactivemusic.mixin;
 
-//import circuitlord.reactivemusic.SongLoader;
+import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.sounds.MusicManager;
+import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.Music;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Environment(EnvType.CLIENT)
 @Mixin(MusicManager.class)
 public class MusicTrackerMixin {
 
-    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
-    private void reactivemusic$tick(CallbackInfo ci) {
-
-        // Disable minecraft music if we're doing our stuff
-        //if (SongLoader.enabled) ci.cancel();
-        // TODO: new disabler
-        ci.cancel();
-
+    // Our songs replace Minecraft's own music. Music that other mods give their biomes, dimensions or screens
+    // still starts, and the rest of the tick still runs for mods that drive their boss music from it.
+    // ReactiveMusic steps aside while that music plays (see SoundManagerMixin).
+    @WrapWithCondition(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/sounds/MusicManager;startPlaying(Lnet/minecraft/sounds/Music;)V"))
+    private boolean reactivemusic$onlyOtherModsMusic(MusicManager musicManager, Music music) {
+        return !music.sound().value().location().getNamespace().equals(Identifier.DEFAULT_NAMESPACE);
     }
 
 }

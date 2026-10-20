@@ -4,12 +4,20 @@ import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.client.sounds.MusicManager;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 
 import java.lang.management.ManagementFactory;
 
 public class ReactiveMusicClientGameTest implements FabricClientGameTest {
 	private static final int SONG_START_TIMEOUT = 20 * 30;
 	private static final int IDLE_MEASURE_TICKS = 100;
+	// with music frequency CONSTANT the game starts a song at most 100 ticks after the last one
+	private static final int VANILLA_SONG_DELAY = 100;
+	private static final float DUCKED = 0.9f;
 	private static final double MAX_IDLE_CPU_SHARE = 0.05;
 	private static final String OVERWORLD = "minecraft:overworld";
 
@@ -24,6 +32,8 @@ public class ReactiveMusicClientGameTest implements FabricClientGameTest {
 			try (TestSingleplayerContext world = context.worldBuilder().create()) {
 				world.getConnection().waitForChunksRender();
 				worldPlaysItsOwnMusic(context);
+				vanillaMusicStaysOff(context);
+				otherMusicTakesOver(context);
 				commandOpensConfigScreen(context);
 				idlePlayerThreadSleeps(context);
 			}
@@ -46,6 +56,41 @@ public class ReactiveMusicClientGameTest implements FabricClientGameTest {
 		context.waitFor(client -> ReactiveMusic.thread.isPlaying() && isPlayingWorldEntry(), SONG_START_TIMEOUT);
 		ReactiveMusic.LOGGER.info("In-game song {} for {}", PlayerThread.currentSong, ReactiveMusic.currentEntry.eventString);
 		context.takeScreenshot("reactivemusic-in-world");
+	}
+
+	private static void vanillaMusicStaysOff(ClientGameTestContext context) {
+		context.runOnClient(client -> client.getMusicManager().setMinutesBetweenSongs(MusicManager.MusicFrequency.CONSTANT));
+		try {
+			context.waitTicks(VANILLA_SONG_DELAY * 2);
+			String vanillaSong = context.computeOnClient(client -> client.getMusicManager().getCurrentMusicTranslationKey());
+			if (vanillaSong != null) {
+				throw new AssertionError("Minecraft's own music started: " + vanillaSong);
+			}
+		} finally {
+			context.runOnClient(client -> client.getMusicManager().setMinutesBetweenSongs(client.options.musicFrequency().get()));
+		}
+	}
+
+	// Music played through the game's sound engine comes from other mods, ours fades out under it and comes back after
+	private static void otherMusicTakesOver(ClientGameTestContext context) {
+		SoundInstance otherMusic = SimpleSoundInstance.forMusic(SoundEvents.MUSIC_GAME.value());
+		withAudibleMusic(context, () -> {
+			context.runOnClient(client -> client.getSoundManager().play(otherMusic));
+			context.waitFor(client -> PlayerThread.musicDiscDuckPercentage < DUCKED, SONG_START_TIMEOUT);
+			context.runOnClient(client -> client.getSoundManager().stop(otherMusic));
+			context.waitFor(client -> PlayerThread.musicDiscDuckPercentage == 1.0f, SONG_START_TIMEOUT);
+		});
+	}
+
+	// The test client starts with the music slider at 0, and ours only steps aside for music that can be heard
+	static void withAudibleMusic(ClientGameTestContext context, Runnable check) {
+		double musicVolumeBefore = context.computeOnClient(client -> client.options.getSoundSourceOptionInstance(SoundSource.MUSIC).get());
+		context.runOnClient(client -> client.options.getSoundSourceOptionInstance(SoundSource.MUSIC).set(1.0));
+		try {
+			check.run();
+		} finally {
+			context.runOnClient(client -> client.options.getSoundSourceOptionInstance(SoundSource.MUSIC).set(musicVolumeBefore));
+		}
 	}
 
 	private static void commandOpensConfigScreen(ClientGameTestContext context) {
