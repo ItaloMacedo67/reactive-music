@@ -62,4 +62,7 @@ jar {
 	from("LICENSE") {
 		rename { "${it}_reactivemusic" }
 	}
+	from("CREDITS.txt") {
+		rename { "CREDITS_reactivemusic.txt" }
+	}
 }

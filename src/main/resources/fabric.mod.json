@@ -3,7 +3,7 @@
 	"id": "reactivemusic",
 	"version": "${version}",
 	"name": "Reactive Music",
-	"description": "Refactors Minecraft's music to be dynamic and reactive, including new fantasy and celtic tracks to give an air of adventure.",
+	"description": "Refactors Minecraft's music to be dynamic and reactive, including new fantasy and celtic tracks to give an air of adventure. Music by Vindsvept, Adrian von Ziegler and Mufaya. Unofficial port to 26.3 by Italo.",
 	"authors": [
 		"CircuitLord"
 	],
@@ -12,7 +12,7 @@
 	],
 	"contact": {
 		"homepage": "https://modrinth.com/mod/reactive-music",
-		"sources": "https://github.com/CircuitLord/ReactiveMusic"
+		"sources": "https://github.com/ItaloMacedo67/reactive-music"
 	},
 	"license": "GPL-3.0-only",
 	"icon": "assets/reactivemusic/icon.png",
