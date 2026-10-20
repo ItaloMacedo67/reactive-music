@@ -2,8 +2,7 @@
   "required": true,
   "package": "circuitlord.reactivemusic.mixin",
   "compatibilityLevel": "JAVA_17",
-  "mixins": [
-  ],
+  "mixins": [],
   "injectors": {
     "defaultRequire": 1
   },
@@ -11,6 +10,7 @@
     "MinecraftClientMixin",
     "MusicTrackerMixin",
     "BossBarHudAccessor",
-    "SoundManagerMixin"
+    "SoundManagerMixin",
+    "MusicManagerAccessor"
   ]
 }

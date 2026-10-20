@@ -32,7 +32,7 @@ public class SoundManagerMixin {
             ReactiveMusic.trackSoundMuteMusic(soundInstance, false);
         }
 
-        // Minecraft's own music never starts with ReactiveMusic around (see MusicTrackerMixin), so this is
+        // Minecraft's own music doesn't start while a songpack plays (see MusicTrackerMixin), so this is
         // music from another mod, like a boss fight or a modded dimension
         else if (soundInstance.getSource() == SoundSource.MUSIC) {
             ReactiveMusic.trackSoundMuteMusic(soundInstance, true);

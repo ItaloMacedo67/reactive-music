@@ -9,8 +9,7 @@ Reactive Music
   https://github.com/CircuitLord/ReactiveMusic
   License: GPL-3.0 (LICENSE_reactivemusic in this jar)
 
-Built-in songs
-  by Vindsvept, Adrian von Ziegler and Mufaya, as credited by the original mod.
+No songs come with this port.
 
 JLayer (package rm_javazoom)
   by JavaZOOM, License: LGPL

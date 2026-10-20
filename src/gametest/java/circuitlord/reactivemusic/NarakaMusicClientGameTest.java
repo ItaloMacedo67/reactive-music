@@ -20,6 +20,7 @@ public class NarakaMusicClientGameTest implements FabricClientGameTest {
 		if (!FabricLoader.getInstance().isModLoaded("naraka")) {
 			return;
 		}
+		TestSongpack.load(context);
 		try (TestSingleplayerContext world = context.worldBuilder().create()) {
 			world.getConnection().waitForChunksRender();
 			ReactiveMusicClientGameTest.withAudibleMusic(context, () -> {

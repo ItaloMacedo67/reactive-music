@@ -1,0 +1,7 @@
+{
+    "pack": {
+        "description": "Select this pack by running /reactivemusic in game!",
+        "min_format": 97,
+        "max_format": 97
+    }
+}

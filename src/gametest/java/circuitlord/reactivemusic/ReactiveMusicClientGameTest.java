@@ -27,8 +27,10 @@ public class ReactiveMusicClientGameTest implements FabricClientGameTest {
 		try {
 			// debug mode drops the delay between songs, so the world music starts right away
 			context.runOnClient(client -> ReactiveMusic.config.debugModeEnabled = true);
+			context.runOnClient(client -> client.getMusicManager().setMinutesBetweenSongs(MusicManager.MusicFrequency.CONSTANT));
 
-			titleScreenPlaysMusic(context);
+			minecraftMusicPlaysWithoutSongpack(context);
+			songpackTakesOverFromMinecraftMusic(context);
 			try (TestSingleplayerContext world = context.worldBuilder().create()) {
 				world.getConnection().waitForChunksRender();
 				worldPlaysItsOwnMusic(context);
@@ -38,8 +40,27 @@ public class ReactiveMusicClientGameTest implements FabricClientGameTest {
 				idlePlayerThreadSleeps(context);
 			}
 		} finally {
-			context.runOnClient(client -> ReactiveMusic.config.debugModeEnabled = debugModeBefore);
+			context.runOnClient(client -> {
+				ReactiveMusic.config.debugModeEnabled = debugModeBefore;
+				client.getMusicManager().setMinutesBetweenSongs(client.options.musicFrequency().get());
+			});
 		}
+	}
+
+	private static void minecraftMusicPlaysWithoutSongpack(ClientGameTestContext context) {
+		if (context.computeOnClient(client -> ReactiveMusic.currentSongpack != null)) {
+			throw new AssertionError("a songpack is loaded although this port comes without one");
+		}
+		context.waitFor(client -> client.getMusicManager().getCurrentMusicTranslationKey() != null, VANILLA_SONG_DELAY * 2);
+	}
+
+	private static void songpackTakesOverFromMinecraftMusic(ClientGameTestContext context) {
+		TestSongpack.load(context);
+		String vanillaSong = context.computeOnClient(client -> client.getMusicManager().getCurrentMusicTranslationKey());
+		if (vanillaSong != null) {
+			throw new AssertionError("Minecraft's music kept playing after the songpack loaded: " + vanillaSong);
+		}
+		titleScreenPlaysMusic(context);
 	}
 
 	private static void titleScreenPlaysMusic(ClientGameTestContext context) {
@@ -59,15 +80,10 @@ public class ReactiveMusicClientGameTest implements FabricClientGameTest {
 	}
 
 	private static void vanillaMusicStaysOff(ClientGameTestContext context) {
-		context.runOnClient(client -> client.getMusicManager().setMinutesBetweenSongs(MusicManager.MusicFrequency.CONSTANT));
-		try {
-			context.waitTicks(VANILLA_SONG_DELAY * 2);
-			String vanillaSong = context.computeOnClient(client -> client.getMusicManager().getCurrentMusicTranslationKey());
-			if (vanillaSong != null) {
-				throw new AssertionError("Minecraft's own music started: " + vanillaSong);
-			}
-		} finally {
-			context.runOnClient(client -> client.getMusicManager().setMinutesBetweenSongs(client.options.musicFrequency().get()));
+		context.waitTicks(VANILLA_SONG_DELAY * 2);
+		String vanillaSong = context.computeOnClient(client -> client.getMusicManager().getCurrentMusicTranslationKey());
+		if (vanillaSong != null) {
+			throw new AssertionError("Minecraft's own music started: " + vanillaSong);
 		}
 	}
 

@@ -4,10 +4,13 @@ import circuitlord.reactivemusic.config.ModConfig;
 import circuitlord.reactivemusic.config.MusicDelayLength;
 import circuitlord.reactivemusic.config.MusicSwitchSpeed;
 import circuitlord.reactivemusic.entries.RMRuntimeEntry;
+import circuitlord.reactivemusic.mixin.MusicManagerAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.client.sounds.MusicManager;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -128,13 +131,13 @@ public class ReactiveMusic {
 			}
 		}
 
-		// load the default one
+		// with none chosen yet, the first one that loads plays
 		if (!loadedUserSongpack) {
-
-			// for the cases where something is broken in the base songpack
-			if (!RMSongpackLoader.availableSongpacks.get(0).blockLoading) {
-				// first is the default songpack
-				setActiveSongpack(RMSongpackLoader.availableSongpacks.get(0));
+			for (var songpack : RMSongpackLoader.availableSongpacks) {
+				if (!songpack.blockLoading) {
+					setActiveSongpack(songpack);
+					break;
+				}
 			}
 		}
 	}
@@ -505,6 +508,7 @@ public class ReactiveMusic {
 		}
 
 		resetPlayer();
+		stopMinecraftMusic();
 
 		currentSongpack = songpackZip;
 
@@ -513,6 +517,19 @@ public class ReactiveMusic {
 		// always start new music immediately
 		queuedToPlayMusic = true;
 
+	}
+
+	// Minecraft's own music plays only while no songpack is loaded
+	private static void stopMinecraftMusic() {
+		MusicManager musicManager = Minecraft.getInstance().getMusicManager();
+		// not made yet while the game starts
+		if (musicManager == null) {
+			return;
+		}
+		SoundInstance music = ((MusicManagerAccessor) musicManager).getCurrentMusic();
+		if (music != null && music.getIdentifier().getNamespace().equals(Identifier.DEFAULT_NAMESPACE)) {
+			musicManager.stopPlaying();
+		}
 	}
 
 	public static void deactivateSongpack(SongpackZip songpackZip) {
@@ -598,7 +615,8 @@ public class ReactiveMusic {
 
 
 	public static void trackSoundMuteMusic(SoundInstance soundInstance, boolean ignoreDistance) {
-		if (soundInstance == null) {
+		// nothing of ours plays without a songpack
+		if (soundInstance == null || currentSongpack == null) {
 			return;
 		}
 

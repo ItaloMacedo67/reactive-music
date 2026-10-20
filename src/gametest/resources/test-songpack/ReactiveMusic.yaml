@@ -1,0 +1,14 @@
+name: "Test Songpack"
+musicSwitchSpeed: INSTANT
+musicDelayLength: NONE
+
+entries:
+  - events: [ "MAIN_MENU" ]
+    forceStopMusicOnChanged: true
+    forceStartMusicOnValid: true
+    songs:
+      - "Silence"
+
+  - events: [ "GENERIC" ]
+    songs:
+      - "Silence"
