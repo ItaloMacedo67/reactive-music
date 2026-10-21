@@ -6,11 +6,13 @@ import circuitlord.reactivemusic.entries.RMRuntimeEntry;
 import circuitlord.reactivemusic.mixin.BossBarHudAccessor;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.LerpingBossEvent;
 import net.minecraft.client.gui.screens.WinScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.equine.Horse;
@@ -26,6 +28,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 public final class SongPicker {
 
@@ -48,6 +51,9 @@ public final class SongPicker {
 
     public static Object2IntOpenHashMap<String> blockCounterMap = new Object2IntOpenHashMap<>();
     public static Object2IntOpenHashMap<String> cachedBlockChecker = new Object2IntOpenHashMap<>();
+
+    public static Set<String> bossBarNames = new HashSet<>();
+    private static final Pattern WHITESPACE = Pattern.compile("\\s");
 
     public static String currentBiomeName = "";
     public static String currentDimName = "";
@@ -146,6 +152,8 @@ public final class SongPicker {
 
         songpackEventMap.put(SongpackEventType.DYING, player.getHealth() / player.getMaxHealth() < 0.35);
         songpackEventMap.put(SongpackEventType.FISHING, player.fishing != null);
+        // the game's own test for its creative music
+        songpackEventMap.put(SongpackEventType.CREATIVE, player.getAbilities().instabuild && player.getAbilities().mayfly);
 
         songpackEventMap.put(SongpackEventType.MINECART, riding instanceof Minecart);
         songpackEventMap.put(SongpackEventType.BOAT, riding instanceof AbstractBoat);
@@ -241,6 +249,7 @@ public final class SongPicker {
 
         // try to get boss bars
         boolean bossBarActive = false;
+        bossBarNames.clear();
 
         if (mc.gui != null && mc.gui.hud.getBossOverlay() != null) {
             try {
@@ -249,6 +258,10 @@ public final class SongPicker {
 
                 if (!bossBars.isEmpty()) {
                     bossBarActive = true;
+                }
+
+                for (LerpingBossEvent bossBar : bossBars.values()) {
+                    addBossBarNames(bossBar.getName());
                 }
             } catch (Exception e) {
             }
@@ -259,6 +272,25 @@ public final class SongPicker {
 
 
         songpackEventMap.put(SongpackEventType.GENERIC, true);
+    }
+
+
+
+    // A boss bar goes by every translation key in its name (the raid bar shows event.minecraft.raid and
+    // event.minecraft.raid.raiders_remaining) and by its text, which is all a renamed boss has. The text is
+    // kept lowercase and without spaces, the way songpack events are read.
+    private static void addBossBarNames(Component name) {
+        bossBarNames.add(WHITESPACE.matcher(name.getString().toLowerCase(Locale.ROOT)).replaceAll(""));
+        addTranslationKeys(name);
+    }
+
+    private static void addTranslationKeys(Component component) {
+        if (component.getContents() instanceof TranslatableContents translatable) {
+            bossBarNames.add(translatable.getKey().toLowerCase(Locale.ROOT));
+        }
+        for (Component sibling : component.getSiblings()) {
+            addTranslationKeys(sibling);
+        }
     }
 
 
@@ -500,8 +532,16 @@ public final class SongPicker {
                 }
             }
 
+            boolean bossBarsValid = false;
+            for (var bossBar : condition.bossBars) {
+                if (bossBarNames.contains(bossBar)) {
+                    bossBarsValid = true;
+                    break;
+                }
+            }
 
-            if (!songpackEventsValid && !biomeTypesValid && !biomeTagsValid && !dimsValid && !blocksValid) {
+
+            if (!songpackEventsValid && !biomeTypesValid && !biomeTagsValid && !dimsValid && !blocksValid && !bossBarsValid) {
                 // none of the OR conditions were valid on this condition, return false
                 return false;
             }

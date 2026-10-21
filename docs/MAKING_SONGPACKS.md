@@ -1,11 +1,11 @@
 
 # Making Songpacks
 
-Songpacks are constructed as folders with a yaml configuration file and a folder with mp3 music files.
+Songpacks are constructed as folders with a yaml configuration file and a folder with ogg or mp3 music files.
 
 They're loaded from the `resourcepacks` folder, although they're not actually resource packs and are instead selected from the configuration UI. This is purely to make including songpacks easier. Until one is selected, the first songpack that loads plays.
 
-**Start from the [songpack template](songpack-template) folder!** Copy it into `resourcepacks` and add your own mp3 files to its `music` folder. This port comes without songs, so only use songs whose license lets you share them.
+**Start from the [songpack template](songpack-template) folder!** Copy it into `resourcepacks` and add your own ogg or mp3 files to its `music` folder. This port comes without songs, so only use songs whose license lets you share them.
 
 You can find a video version of this wiki page [here](https://www.youtube.com/watch?v=YvEap8IUS-c)!
 > Highly recommended to use VSCode with the YAML extension as shown in the video, or else you will have issues making properly formatted YAML files!
@@ -59,7 +59,7 @@ Here's an example songpack entry:
 
 - `(SongpackEventType) events` The specific events that need to be valid for this entry to play. (see details below)
 - `(Boolean) allowFallback` (default false) If we've played all songs from this event, should  we "fallback" to other events that are also valid? (good for one-off events you don't want to play over and over)
-- `(String[]) songs` The list of song files to pick from when this event plays. These are picked from the `music` sub-folder.
+- `(String[]) songs` The list of song files to pick from when this event plays. These are picked from the `music` sub-folder, `MySong` is `music/MySong.ogg` or `music/MySong.mp3`. Songs can also come from the game or from another pack, see [Songs From Elsewhere](#songs-from-elsewhere).
 
 <br><br>
 
@@ -110,6 +110,7 @@ This lists all the available songpack events you have available.
 - `MAIN_MENU`
 - `CREDITS`
 - `HOME` (within 45 blocks of bed)
+- `CREATIVE` (creative mode, the same test Minecraft uses for its creative music)
 
 ### Time
 - `DAY`
@@ -144,6 +145,7 @@ This lists all the available songpack events you have available.
 
 ### Combat
 - `BOSS` (whenever a boss bar is on-screen)
+- `BOSSBAR=name` (a specific boss bar, see below)
 
 <br><br>
 
@@ -168,6 +170,28 @@ NOTE: putting the "IS_" in front of the tag is optional ("BIOMETAG=IS_MOUNTAIN" 
   - events: [ "DAY", "BIOMETAG=IS_HOT" ]
     songs:
       - "ForTheKing"
+```
+
+<br><br>
+
+
+## Boss Bar Events
+
+`BOSSBAR=name` is true while a boss bar with that name is on-screen. The name is the translation key the bar's title uses, written in full: `entity.minecraft.wither`, `entity.minecraft.ender_dragon`, `event.minecraft.raid`, or `entity.modname.boss` for a modded boss. A boss renamed with a name tag can be matched by its name in lowercase, without spaces.
+
+```
+  - events: [ "BOSSBAR=entity.minecraft.wither" ]
+    forceStopMusicOnChanged: true
+    forceStartMusicOnValid: true
+    songs:
+      - "WitherFight"
+
+  # the raid bar reads event.minecraft.raid.victory.full once the raid is won, so this stops with the fight
+  - events: [ "BOSSBAR=event.minecraft.raid" ]
+    forceStopMusicOnChanged: true
+    forceStartMusicOnValid: true
+    songs:
+      - "RaidFight"
 ```
 
 <br><br>
@@ -200,6 +224,28 @@ Fortress detection example:
 [ "DIM=NETHER", "BLOCK=nether_bricks,1000", "BLOCK=nether_brick_fence,2" ]
 ```
 
+
+<br><br>
+
+
+## Songs From Elsewhere
+
+A song doesn't have to be in the songpack's `music` folder:
+
+- `minecraft:music/game/sweden` is one of Minecraft's own songs, named the way `sounds.json` names it. It plays from the game's own files, so a resource pack that replaces the song doesn't change it.
+- `Some Pack.zip/assets/minecraft/sounds/music/game/track.ogg` is a file inside another zip in the `resourcepacks` folder. That pack doesn't need to be enabled, it only has to be there. Songs from a pack that isn't there are skipped, with one warning for the whole pack.
+
+This lets a songpack use music it can't share itself.
+
+```
+  - events: [ "BIOME=minecraft:forest" ]
+    songs:
+      - "minecraft:music/game/sweden"
+      - "Other Music Pack.zip/assets/minecraft/sounds/music/game/forest_theme.ogg"
+      - "MyOwnSong"
+```
+
+An entry whose songs are all missing is skipped, so the entries below it still play. An entry written with `songs: []` plays silence on purpose.
 
 <br><br>
 

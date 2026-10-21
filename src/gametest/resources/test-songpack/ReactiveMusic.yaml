@@ -9,6 +9,24 @@ entries:
     songs:
       - "Silence"
 
+  - events: [ "BOSSBAR=entity.minecraft.wither" ]
+    forceStopMusicOnChanged: true
+    forceStartMusicOnValid: true
+    songs:
+      - "Quiet"
+
+  - events: [ "BOSSBAR=event.minecraft.raid" ]
+    forceStopMusicOnChanged: true
+    forceStartMusicOnValid: true
+    songs:
+      - "Other Test Pack.zip/assets/minecraft/sounds/music/quiet.ogg"
+
+  - events: [ "CREATIVE" ]
+    forceStopMusicOnChanged: true
+    forceStartMusicOnValid: true
+    songs:
+      - "minecraft:music/menu/moog_city_2"
+
   - events: [ "GENERIC" ]
     songs:
       - "Silence"

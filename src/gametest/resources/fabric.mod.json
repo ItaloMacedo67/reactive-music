@@ -7,6 +7,7 @@
 	"entrypoints": {
 		"fabric-client-gametest": [
 			"circuitlord.reactivemusic.ReactiveMusicClientGameTest",
+			"circuitlord.reactivemusic.SongSourcesClientGameTest",
 			"circuitlord.reactivemusic.NarakaMusicClientGameTest"
 		]
 	},

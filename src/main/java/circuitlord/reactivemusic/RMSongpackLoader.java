@@ -12,6 +12,8 @@ import java.util.*;
 
 public class RMSongpackLoader {
 
+    static final String EMBEDDED_SONGPACK_FOLDER = "/musicpack/";
+
     public static List<SongpackZip> availableSongpacks = new ArrayList<>();
 
     public static MusicPackResource getInputStream(Path dirPath, String fileName, boolean embedded) {
@@ -19,7 +21,7 @@ public class RMSongpackLoader {
 
         // quick-path for embedded files
         if (embedded) {
-            resource.inputStream = RMSongpackLoader.class.getResourceAsStream("/musicpack/" + fileName);
+            resource.inputStream = RMSongpackLoader.class.getResourceAsStream(EMBEDDED_SONGPACK_FOLDER + fileName);
             return resource;
         }
 
@@ -41,6 +43,7 @@ public class RMSongpackLoader {
                     resource.fileSystem = fs;
                     return resource;
                 }
+                fs.close();
             } catch (IOException e) {
                 ReactiveMusic.LOGGER.error("Failed while loading file from zip " + e.getMessage());
                 return null;
@@ -247,40 +250,34 @@ public class RMSongpackLoader {
             }
         }
 
-        // Check if all the songs are valid
+        // Find the file of every song, drop the songs without one and the entries left with none
+        SongFinder finder = new SongFinder(songpackZip);
         for (int i = 0; i < songpackZip.config.entries.length; i++) {
-            if (songpackZip.config.entries[i] == null || songpackZip.config.entries[i].songs == null) continue;
+            SongpackEntry entry = songpackZip.config.entries[i];
+            if (entry == null || entry.songs == null) continue;
 
-            // loop over songs backwards so we can remove invalid entries
-            for (int j = songpackZip.config.entries[i].songs.length - 1; j >= 0; j--) {
-
-                String song = songpackZip.config.entries[i].songs[j];
-                var inputStream = getInputStream(songpackZip.path, "music/" + song + ".mp3", songpackZip.embedded);
-
-                if (inputStream == null) {
-                    StringBuilder eventName = new StringBuilder();
-                    for (int k = 0; k < songpackZip.config.entries[i].events.length; k++) {
-                        eventName.append(songpackZip.config.entries[i].events[k].toString());
-                    }
-
-                    songpackZip.errorString += "Failed finding song: \"" + song + "\" for event: \"" + eventName + "\"\n\n";
-
-                    // remove this invalid audio file
-                    // this is unoptimized and slow but it's fine
-                    java.util.List<String> list = new java.util.ArrayList<>(java.util.Arrays.asList(songpackZip.config.entries[i].songs));
-                    list.remove(j);
-                    songpackZip.config.entries[i].songs = list.toArray(new String[0]);
-
-
-
-                    // songpackZip.blockLoading = true;
-                } else {
-                    try {
-                        inputStream.close();
-                    } catch (Exception ignored) {}
+            List<String> foundSongs = new ArrayList<>();
+            for (String song : entry.songs) {
+                SongFile file = finder.find(song);
+                if (file != null) {
+                    foundSongs.add(song);
+                    songpackZip.songFiles.put(song, file);
+                } else if (!finder.isFromMissingPack(song)) {
+                    songpackZip.errorString += "Failed finding song: \"" + song + "\" for event: \"" + String.join("", entry.events) + "\"\n\n";
                 }
             }
+
+            // an entry written with no songs is a silent one, but one whose songs are all missing would silence the entries below it
+            if (foundSongs.isEmpty() && entry.songs.length > 0) {
+                songpackZip.errorString += "None of the songs for event \"" + String.join("", entry.events) + "\" were found, it is skipped\n\n";
+                songpackZip.config.entries[i] = null;
+                continue;
+            }
+            entry.songs = foundSongs.toArray(new String[0]);
         }
+
+        finder.missingPacks.forEach((pack, songs) -> songpackZip.errorString +=
+                "Couldn't find \"" + pack + "\" in the resourcepacks folder, " + songs.size() + " songs from it won't play\n\n");
     }
 
 }

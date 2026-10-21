@@ -484,7 +484,7 @@ public class ReactiveMusic {
 		if (song != null) {
             doDebugLog("Changing entry: " + newEntry.eventString + " Song name: " + song);
 
-			thread.play(song);
+			thread.play(song, currentSongpack.songFiles.get(song));
 		}
 		else {
 			// TODO: maybe a better way to do this that doesn't spam?

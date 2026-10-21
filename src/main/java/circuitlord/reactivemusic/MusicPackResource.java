@@ -10,8 +10,12 @@ public class MusicPackResource {
     public InputStream inputStream = null;
 
     public void close() throws Exception {
-        inputStream.close();
-        fileSystem.close();
+        if (inputStream != null) {
+            inputStream.close();
+        }
+        if (fileSystem != null) {
+            fileSystem.close();
+        }
     }
 
 

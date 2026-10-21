@@ -1,0 +1,15 @@
+name: "Test Songpack With Missing Files"
+
+entries:
+  - events: [ "BOSSBAR=entity.minecraft.wither" ]
+    songs:
+      - "Not Installed Pack.zip/assets/minecraft/sounds/music/a.ogg"
+      - "Not Installed Pack.zip/assets/minecraft/sounds/music/b.ogg"
+
+  - events: [ "CREATIVE" ]
+    songs:
+      - "NoSuchSong"
+      - "Quiet"
+
+  - events: [ "GENERIC" ]
+    songs: []

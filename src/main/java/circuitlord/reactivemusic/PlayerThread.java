@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.sounds.SoundSource;
+import rm_javazoom.jl.decoder.JavaLayerException;
 import rm_javazoom.jl.player.AudioDevice;
 import rm_javazoom.jl.player.JavaSoundAudioDevice;
 import rm_javazoom.jl.player.advanced.AdvancedPlayer;
@@ -46,9 +47,10 @@ public class PlayerThread extends Thread {
 	public volatile static String currentSong = null;
 	public volatile static String currentSongChoices = null;
 
+	private volatile SongFile currentSongFile = null;
 	public volatile MusicPackResource currentSongResource = null;
 	
-	AdvancedPlayer player;
+	volatile SongPlayer player;
 
 	private volatile boolean queued = false;
 
@@ -72,40 +74,70 @@ public class PlayerThread extends Thread {
 
 	@Override
 	public void run() {
-		try {
-			while(!kill) {
+		while(!kill) {
 
-				if(queued && currentSong != null) {
-
-					currentSongResource = RMSongpackLoader.getInputStream(ReactiveMusic.currentSongpack.path, "music/" + currentSong + ".mp3", ReactiveMusic.currentSongpack.embedded);
-					if(currentSongResource == null || currentSongResource.inputStream == null)
-						continue;
-
-					player = new AdvancedPlayer(currentSongResource.inputStream);
-					queued = false;
-
-				}
+			if(queued && currentSong != null) {
+				player = openPlayer(currentSongFile);
+				queued = false;
+			}
 
 
-				if(player != null && player.getAudioDevice() != null) {
+			if(player != null && player.getAudioDevice() != null) {
 
-					// go to full volume
-					setGainPercentage(1.0f);
-					processRealGain();
+				// go to full volume
+				setGainPercentage(1.0f);
+				processRealGain();
 
-					ReactiveMusic.LOGGER.info("Playing " + currentSong);
-					playing = true;
-					player.play();
-
-				}
-				else if (!queued) {
-					// sleep until play() hands us a song, spinning here kept a whole CPU core busy between songs
-					LockSupport.park(this);
-				}
+				ReactiveMusic.LOGGER.info("Playing " + currentSong);
+				playing = true;
+				playUntilDone(player);
 
 			}
-		} catch(Exception e) {
-			e.printStackTrace();
+			else if (!queued) {
+				// sleep until play() hands us a song, spinning here kept a whole CPU core busy between songs
+				LockSupport.park(this);
+			}
+
+		}
+	}
+
+	// null when the song can't be read, another one gets picked later
+	private SongPlayer openPlayer(SongFile file) {
+		if (file == null) {
+			ReactiveMusic.LOGGER.error("No file for " + currentSong);
+			return null;
+		}
+		MusicPackResource resource = null;
+		try {
+			resource = file.open();
+			if (resource == null || resource.inputStream == null) {
+				ReactiveMusic.LOGGER.error("Couldn't find " + file);
+				return null;
+			}
+			InputStream input = resource.inputStream;
+			SongPlayer songPlayer = file.isOgg() ? new OggPlayer(input) : new AdvancedPlayer(input);
+			currentSongResource = resource;
+			return songPlayer;
+		} catch (IOException | JavaLayerException e) {
+			ReactiveMusic.LOGGER.error("Couldn't play " + file + ": " + e);
+			if (resource != null) {
+				close(resource);
+			}
+			return null;
+		}
+	}
+
+	// a broken song must not end this thread, or no music plays until the game restarts
+	private void playUntilDone(SongPlayer songPlayer) {
+		try {
+			songPlayer.play();
+		} catch (IOException | JavaLayerException | RuntimeException e) {
+			// stopping a song closes its zip, which can cut the last read short
+			if (playing) {
+				ReactiveMusic.LOGGER.error("Failed playing " + currentSong + ": " + e);
+			}
+			playing = false;
+			songPlayer.close();
 		}
 	}
 
@@ -115,26 +147,34 @@ public class PlayerThread extends Thread {
 		playing = false;
 
 		if(player != null)
-			player.queuedToStop = true;
+			player.queueStop();
 
 		queued = false;
 		currentSong = null;
+		currentSongFile = null;
 
-		if (currentSongResource != null && currentSongResource.fileSystem != null) {
-            try {
-				currentSongResource.close();
-            } catch (Exception e) {
-                ReactiveMusic.LOGGER.error("Failed to close file system/input stream " + e.getMessage());
-            }
-        }
+		// the player closes the song's own stream, a zip has to be closed here
+		MusicPackResource resource = currentSongResource;
+		if (resource != null && resource.fileSystem != null) {
+			close(resource);
+		}
 
 		currentSongResource = null;
 	}
 
-	public void play(String song) {
+	private static void close(MusicPackResource resource) {
+		try {
+			resource.close();
+		} catch (Exception e) {
+			ReactiveMusic.LOGGER.error("Failed to close file system/input stream " + e.getMessage());
+		}
+	}
+
+	public void play(String song, SongFile file) {
 		resetPlayer();
 
 		currentSong = song;
+		currentSongFile = file;
 		queued = true;
 		LockSupport.unpark(this);
 	}

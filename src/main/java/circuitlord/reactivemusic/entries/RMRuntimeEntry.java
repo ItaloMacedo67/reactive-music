@@ -14,6 +14,8 @@ import java.util.List;
 
 public class RMRuntimeEntry {
 
+    private static final String BOSS_BAR_PREFIX = "bossbar=";
+
 
     public List<RMEntryCondition> conditions = new ArrayList<>();
 
@@ -129,6 +131,16 @@ public class RMRuntimeEntry {
                         Entry.errorString += "Biome tag '" + rawTagString + "' is not available on this platform!\n\n";
                     }
 
+                }
+
+                // a boss bar by its translation key, like entity.minecraft.wither, or by the name it shows
+                else if (eventSection.startsWith(BOSS_BAR_PREFIX)) {
+                    String bossBar = eventSection.substring(BOSS_BAR_PREFIX.length());
+                    if (bossBar.isEmpty())
+                        continue;
+
+                    condition.bossBars.add(bossBar);
+                    eventHasData = true;
                 }
 
                 // dimensions

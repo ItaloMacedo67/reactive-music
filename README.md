@@ -13,6 +13,9 @@ An unofficial port of [Reactive Music](https://modrinth.com/mod/reactive-music) 
 - Discs from other mods fade it out too, not only the ones with `music_disc` in their sound name.
 - The song player waits without using the processor while nothing plays. Before, it kept a whole core busy between songs.
 - No more "Unsupported control type: Master Gain" errors in the log when a song starts.
+- Songs can be ogg files as well as mp3. A songpack can also play Minecraft's own songs straight from the game files, where no resource pack can swap them, and songs from other packs in the `resourcepacks` folder, enabled or not.
+- New events: `CREATIVE`, and `BOSSBAR=` for one boss bar at a time (the Wither, the Ender Dragon, a raid, a modded boss).
+- A song that can't be read is skipped. Before, it stopped all music until the game restarted.
 
 ## Download
 

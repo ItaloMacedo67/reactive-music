@@ -21,4 +21,6 @@ public class RMEntryCondition {
 
     public List<RMEntryBlockCondition> blocks = new ArrayList<>();
 
+    public List<String> bossBars = new ArrayList<>();
+
 }
