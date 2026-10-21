@@ -3,9 +3,12 @@ musicSwitchSpeed: INSTANT
 musicDelayLength: NONE
 
 entries:
+  # 30 seconds before the end of the 8 minute silence
   - events: [ "MAIN_MENU" ]
     forceStopMusicOnChanged: true
     forceStartMusicOnValid: true
+    firstSong: "Quiet"
+    firstSongStart: 450
     songs:
       - "Silence"
 
@@ -20,6 +23,19 @@ entries:
     forceStartMusicOnValid: true
     songs:
       - "Other Test Pack.zip/assets/minecraft/sounds/music/quiet.ogg"
+
+  - events: [ "BOSSBAR=entity.minecraft.ender_dragon" ]
+    forceStopMusicOnChanged: true
+    forceStartMusicOnValid: true
+    songs:
+      - "Disabled Test Pack.zip/assets/minecraft/sounds/music/quiet.ogg"
+
+  # Broken.ogg isn't an ogg file
+  - events: [ "BOSSBAR=entity.minecraft.elder_guardian" ]
+    forceStopMusicOnChanged: true
+    forceStartMusicOnValid: true
+    songs:
+      - "Broken"
 
   - events: [ "CREATIVE" ]
     forceStopMusicOnChanged: true

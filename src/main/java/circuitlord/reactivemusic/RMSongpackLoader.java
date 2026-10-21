@@ -30,8 +30,8 @@ public class RMSongpackLoader {
             return null;
         }
 
-        // Check if path is a zip file
-        if (Files.isRegularFile(dirPath) && dirPath.toString().endsWith(".zip")) {
+        // a file is a zip, whatever its name ends with (Prism Launcher adds .disabled to packs it turns off)
+        if (Files.isRegularFile(dirPath)) {
             Map<String, String> env = new HashMap<>();
             env.put("create", "false");
 
@@ -274,6 +274,16 @@ public class RMSongpackLoader {
                 continue;
             }
             entry.songs = foundSongs.toArray(new String[0]);
+
+            if (entry.firstSong != null) {
+                SongFile file = finder.find(entry.firstSong);
+                if (file != null) {
+                    songpackZip.songFiles.put(entry.firstSong, file);
+                } else {
+                    songpackZip.errorString += "Failed finding first song: \"" + entry.firstSong + "\" for event: \"" + String.join("", entry.events) + "\"\n\n";
+                    entry.firstSong = null;
+                }
+            }
         }
 
         finder.missingPacks.forEach((pack, songs) -> songpackZip.errorString +=

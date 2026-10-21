@@ -2,8 +2,8 @@
 	"schemaVersion": 1,
 	"id": "reactivemusic",
 	"version": "${version}",
-	"name": "Reactive Music",
-	"description": "Refactors Minecraft's music to be dynamic and reactive, with songs from songpacks in the resourcepacks folder. Unofficial port to 26.3 by Italo.",
+	"name": "Reactive Music Fork",
+	"description": "A fork of Reactive Music by CircuitLord, ported to 26.3 by Italo. Makes Minecraft's music dynamic and reactive, with songs from songpacks in the resourcepacks folder.",
 	"authors": [
 		"CircuitLord"
 	],

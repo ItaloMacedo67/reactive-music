@@ -1,4 +1,4 @@
-Reactive Music for Minecraft 26.3 - credits
+Reactive Music Fork - credits
 
 This is an unofficial port of Reactive Music 1.3.5 to Minecraft 26.3 (Fabric),
 made for the Mildly Difficult modpack by Italo. The source code of this port is

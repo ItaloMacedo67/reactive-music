@@ -22,6 +22,8 @@ public class OggPlayer implements SongPlayer, FloatConsumer {
 	private volatile JavaSoundAudioDevice audio;
 	private short[] chunk = new short[INITIAL_CHUNK_SAMPLES];
 	private int chunkLength = 0;
+	// decoded and thrown away to start the song further in
+	private long samplesToSkip = 0;
 	private volatile boolean stopQueued = false;
 	private volatile boolean complete = false;
 
@@ -30,6 +32,12 @@ public class OggPlayer implements SongPlayer, FloatConsumer {
 		JavaSoundAudioDevice device = new JavaSoundAudioDevice();
 		device.open(stream.getFormat());
 		audio = device;
+	}
+
+	@Override
+	public void startAt(float seconds) {
+		AudioFormat format = stream.getFormat();
+		samplesToSkip = (long) (seconds * format.getSampleRate()) * format.getChannels();
 	}
 
 	@Override
@@ -53,6 +61,10 @@ public class OggPlayer implements SongPlayer, FloatConsumer {
 
 	@Override
 	public void accept(float sample) {
+		if (samplesToSkip > 0) {
+			samplesToSkip--;
+			return;
+		}
 		if (chunkLength == chunk.length) {
 			chunk = Arrays.copyOf(chunk, chunk.length * 2);
 		}

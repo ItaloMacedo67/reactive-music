@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -62,8 +63,8 @@ public class SongSourcesClientGameTest implements FabricClientGameTest {
 				throw new AssertionError("only the entry left without songs should be skipped, the silent one stays: " + events);
 			}
 			RMRuntimeEntry creative = songpack.runtimeEntries.getFirst();
-			if (!creative.songs.equals(List.of(TestSongpack.QUIET_SONG))) {
-				throw new AssertionError("the missing song should be dropped: " + creative.songs);
+			if (!creative.songs.equals(List.of(TestSongpack.QUIET_SONG, TestSongpack.DISABLED_PACK_SONG))) {
+				throw new AssertionError("the missing song should be dropped and the disabled pack's song kept: " + creative.songs);
 			}
 		});
 	}
@@ -75,6 +76,20 @@ public class SongSourcesClientGameTest implements FabricClientGameTest {
 
 		setBossBarName(world, "event.minecraft.raid");
 		waitForOggSong(context, TestSongpack.OTHER_PACK_SONG);
+
+		setBossBarName(world, "entity.minecraft.ender_dragon");
+		waitForOggSong(context, TestSongpack.DISABLED_PACK_SONG);
+
+		// tried once, then left out instead of being opened again every tick
+		setBossBarName(world, "entity.minecraft.elder_guardian");
+		context.waitFor(client -> PlayerThread.unplayableSongs.contains(TestSongpack.BROKEN_SONG), SONG_SWITCH_TIMEOUT);
+		context.waitTicks(PLAYBACK_CHECK_TICKS);
+		context.runOnClient(client -> {
+			int tries = Collections.frequency(SongPicker.recentlyPickedSongs, TestSongpack.BROKEN_SONG);
+			if (tries != 1 || ReactiveMusic.thread.isPlaying()) {
+				throw new AssertionError("the broken song was picked " + tries + " times");
+			}
+		});
 
 		// once the raid is won its bar reads event.minecraft.raid.victory.full, and the fight music ends with the fight
 		setBossBarName(world, "event.minecraft.raid.victory.full");

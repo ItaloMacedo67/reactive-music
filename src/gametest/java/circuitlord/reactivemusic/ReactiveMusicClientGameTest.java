@@ -14,6 +14,10 @@ import java.lang.management.ManagementFactory;
 
 public class ReactiveMusicClientGameTest implements FabricClientGameTest {
 	private static final int SONG_START_TIMEOUT = 20 * 30;
+	// the test songpack's first song starts 30 seconds before its end
+	private static final int FIRST_SONG_END_TIMEOUT = 20 * 45;
+	private static final String FIRST_SONG = "Quiet";
+	private static final String MENU_SONG = "Silence";
 	private static final int IDLE_MEASURE_TICKS = 100;
 	// with music frequency CONSTANT the game starts a song at most 100 ticks after the last one
 	private static final int VANILLA_SONG_DELAY = 100;
@@ -61,6 +65,22 @@ public class ReactiveMusicClientGameTest implements FabricClientGameTest {
 			throw new AssertionError("Minecraft's music kept playing after the songpack loaded: " + vanillaSong);
 		}
 		titleScreenPlaysMusic(context);
+		firstSongPlaysOnceFromItsStart(context);
+	}
+
+	// The menu's first song comes before the random ones, again if it was stopped right away, and starts near its end
+	private static void firstSongPlaysOnceFromItsStart(ClientGameTestContext context) {
+		waitForSong(context, FIRST_SONG, SONG_START_TIMEOUT);
+		context.runOnClient(client -> ReactiveMusic.resetPlayer());
+		waitForSong(context, FIRST_SONG, SONG_START_TIMEOUT);
+
+		String key = TestSongpack.NAME + "/" + FIRST_SONG;
+		context.waitFor(client -> ReactiveMusic.config.playedFirstSongs.contains(key), SONG_START_TIMEOUT);
+		waitForSong(context, MENU_SONG, FIRST_SONG_END_TIMEOUT);
+	}
+
+	private static void waitForSong(ClientGameTestContext context, String song, int timeout) {
+		context.waitFor(client -> ReactiveMusic.thread.isPlaying() && song.equals(PlayerThread.currentSong), timeout);
 	}
 
 	private static void titleScreenPlaysMusic(ClientGameTestContext context) {

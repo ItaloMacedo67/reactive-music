@@ -60,6 +60,18 @@ public class AdvancedPlayer implements SongPlayer
 		queuedToStop = true;
 	}
 
+	public void startAt(float seconds) throws JavaLayerException
+	{
+		float skippedMillis = 0;
+		while (skippedMillis < seconds * 1000)
+		{
+			Header h = bitstream.readFrame();
+			if (h == null) return;
+			skippedMillis += h.ms_per_frame();
+			bitstream.closeFrame();
+		}
+	}
+
 	/**
 	 * Creates a new <code>Player</code> instance.
 	 */

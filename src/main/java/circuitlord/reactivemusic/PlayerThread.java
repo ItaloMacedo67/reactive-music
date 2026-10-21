@@ -12,6 +12,8 @@ import rm_javazoom.jl.player.advanced.AdvancedPlayer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.LockSupport;
 
 public class PlayerThread extends Thread {
@@ -47,7 +49,11 @@ public class PlayerThread extends Thread {
 	public volatile static String currentSong = null;
 	public volatile static String currentSongChoices = null;
 
+	// songs that failed to open or to play, so they aren't picked again every tick; cleared when a songpack loads
+	static final Set<String> unplayableSongs = ConcurrentHashMap.newKeySet();
+
 	private volatile SongFile currentSongFile = null;
+	private volatile float currentSongStart = 0;
 	public volatile MusicPackResource currentSongResource = null;
 	
 	volatile SongPlayer player;
@@ -74,10 +80,15 @@ public class PlayerThread extends Thread {
 
 	@Override
 	public void run() {
+		// the game thread clears currentSong when it stops a song, so the one being played is kept here
+		String song = null;
+
 		while(!kill) {
 
-			if(queued && currentSong != null) {
-				player = openPlayer(currentSongFile);
+			String queuedSong = currentSong;
+			if(queued && queuedSong != null) {
+				song = queuedSong;
+				player = openPlayer(song, currentSongFile);
 				queued = false;
 			}
 
@@ -88,9 +99,9 @@ public class PlayerThread extends Thread {
 				setGainPercentage(1.0f);
 				processRealGain();
 
-				ReactiveMusic.LOGGER.info("Playing " + currentSong);
+				ReactiveMusic.LOGGER.info("Playing " + song);
 				playing = true;
-				playUntilDone(player);
+				playUntilDone(player, song);
 
 			}
 			else if (!queued) {
@@ -102,9 +113,10 @@ public class PlayerThread extends Thread {
 	}
 
 	// null when the song can't be read, another one gets picked later
-	private SongPlayer openPlayer(SongFile file) {
+	private SongPlayer openPlayer(String song, SongFile file) {
 		if (file == null) {
-			ReactiveMusic.LOGGER.error("No file for " + currentSong);
+			ReactiveMusic.LOGGER.error("No file for " + song);
+			unplayableSongs.add(song);
 			return null;
 		}
 		MusicPackResource resource = null;
@@ -112,14 +124,17 @@ public class PlayerThread extends Thread {
 			resource = file.open();
 			if (resource == null || resource.inputStream == null) {
 				ReactiveMusic.LOGGER.error("Couldn't find " + file);
+				unplayableSongs.add(song);
 				return null;
 			}
 			InputStream input = resource.inputStream;
 			SongPlayer songPlayer = file.isOgg() ? new OggPlayer(input) : new AdvancedPlayer(input);
+			songPlayer.startAt(currentSongStart);
 			currentSongResource = resource;
 			return songPlayer;
 		} catch (IOException | JavaLayerException e) {
 			ReactiveMusic.LOGGER.error("Couldn't play " + file + ": " + e);
+			unplayableSongs.add(song);
 			if (resource != null) {
 				close(resource);
 			}
@@ -128,13 +143,14 @@ public class PlayerThread extends Thread {
 	}
 
 	// a broken song must not end this thread, or no music plays until the game restarts
-	private void playUntilDone(SongPlayer songPlayer) {
+	private void playUntilDone(SongPlayer songPlayer, String song) {
 		try {
 			songPlayer.play();
 		} catch (IOException | JavaLayerException | RuntimeException e) {
 			// stopping a song closes its zip, which can cut the last read short
 			if (playing) {
-				ReactiveMusic.LOGGER.error("Failed playing " + currentSong + ": " + e);
+				ReactiveMusic.LOGGER.error("Failed playing " + song + ": " + e);
+				unplayableSongs.add(song);
 			}
 			playing = false;
 			songPlayer.close();
@@ -170,11 +186,12 @@ public class PlayerThread extends Thread {
 		}
 	}
 
-	public void play(String song, SongFile file) {
+	public void play(String song, SongFile file, float startSeconds) {
 		resetPlayer();
 
 		currentSong = song;
 		currentSongFile = file;
+		currentSongStart = startSeconds;
 		queued = true;
 		LockSupport.unpark(this);
 	}

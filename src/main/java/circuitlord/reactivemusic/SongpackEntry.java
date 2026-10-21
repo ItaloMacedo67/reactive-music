@@ -28,6 +28,10 @@ public class SongpackEntry {
 
     public String[] songs;
 
+    // plays instead of a random song the first time this entry plays after the mod is installed, from firstSongStart seconds
+    public String firstSong = null;
+    public float firstSongStart = 0;
+
 
     // deprecated
     public boolean alwaysPlay = false;

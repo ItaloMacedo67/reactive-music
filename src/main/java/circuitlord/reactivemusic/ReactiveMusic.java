@@ -300,9 +300,15 @@ public class ReactiveMusic {
 
 				if (shouldStartNewSong) {
 
-					String picked = SongPicker.pickRandomSong(selectedSongs);
+					if (FirstSongs.isDue(newEntry)) {
+						SongPicker.rememberPicked(newEntry.firstSong);
+						changeCurrentSong(newEntry.firstSong, newEntry, newEntry.firstSongStart);
+					}
+					else {
+						String picked = SongPicker.pickRandomSong(selectedSongs);
 
-					changeCurrentSong(picked, newEntry);
+						changeCurrentSong(picked, newEntry);
+					}
 				}
 
 			}
@@ -326,6 +332,8 @@ public class ReactiveMusic {
 
 
 		thread.processRealGain();
+
+		FirstSongs.tick(currentEntry, currentSong, thread.isPlaying());
 
 
 		previousValidEntries = validEntries;
@@ -472,6 +480,10 @@ public class ReactiveMusic {
 
 
 	public static void changeCurrentSong(String song, RMRuntimeEntry newEntry) {
+		changeCurrentSong(song, newEntry, 0);
+	}
+
+	public static void changeCurrentSong(String song, RMRuntimeEntry newEntry, float startSeconds) {
 
 		resetPlayer();
 
@@ -484,7 +496,7 @@ public class ReactiveMusic {
 		if (song != null) {
             doDebugLog("Changing entry: " + newEntry.eventString + " Song name: " + song);
 
-			thread.play(song, currentSongpack.songFiles.get(song));
+			thread.play(song, currentSongpack.songFiles.get(song), startSeconds);
 		}
 		else {
 			// TODO: maybe a better way to do this that doesn't spam?
@@ -511,6 +523,8 @@ public class ReactiveMusic {
 		stopMinecraftMusic();
 
 		currentSongpack = songpackZip;
+		// a songpack that loads again may have its missing files back
+		PlayerThread.unplayableSongs.clear();
 
 		loadedEntries = songpackZip.runtimeEntries;
 

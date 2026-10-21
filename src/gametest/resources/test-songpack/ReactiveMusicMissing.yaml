@@ -10,6 +10,7 @@ entries:
     songs:
       - "NoSuchSong"
       - "Quiet"
+      - "Disabled Test Pack.zip/assets/minecraft/sounds/music/quiet.ogg"
 
   - events: [ "GENERIC" ]
     songs: []

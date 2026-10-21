@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,12 +19,15 @@ import java.util.zip.ZipFile;
 // Finds the file behind each song a songpack lists. A song is written one of three ways:
 //   "MySong"                          music/MySong.ogg or music/MySong.mp3 in the songpack
 //   "minecraft:music/game/sweden"     one of the game's own sounds, never swapped by a resource pack
-//   "Other Pack.zip/assets/.../x.ogg" a file in another zip in the resourcepacks folder, enabled or not
+//   "Other Pack.zip/assets/.../x.ogg" a file in another zip in the resourcepacks folder, enabled or not,
+//                                     also found as Other Pack.zip.disabled
 // Each zip is listed only once, however many songs come from it.
 final class SongFinder {
 
 	private static final String GAME_SOUND_PREFIX = Identifier.DEFAULT_NAMESPACE + ":";
 	private static final String ZIP_FOLDER = ".zip/";
+	// Prism Launcher turns a pack off by adding this to its file name, and its songs are still wanted then
+	private static final String PRISM_DISABLED_SUFFIX = ".disabled";
 	private static final String SONGPACK_MUSIC_FOLDER = "music/";
 	private static final String[] SONGPACK_EXTENSIONS = {".ogg", ".mp3"};
 
@@ -67,12 +71,22 @@ final class SongFinder {
 	}
 
 	private SongFile findInOtherPack(String packName, String path, String song) {
-		Path pack = resourcePacks.resolve(packName);
-		if (!Files.isRegularFile(pack)) {
+		Path pack = otherPack(packName);
+		if (pack == null) {
 			missingPacks.computeIfAbsent(packName, name -> new HashSet<>()).add(song);
 			return null;
 		}
 		return zipContains(pack, path) ? SongFile.inPack(pack, path, false) : null;
+	}
+
+	private Path otherPack(String packName) {
+		for (String fileName : List.of(packName, packName + PRISM_DISABLED_SUFFIX)) {
+			Path pack = resourcePacks.resolve(fileName);
+			if (Files.isRegularFile(pack)) {
+				return pack;
+			}
+		}
+		return null;
 	}
 
 	private SongFile findInSongpack(String song) {

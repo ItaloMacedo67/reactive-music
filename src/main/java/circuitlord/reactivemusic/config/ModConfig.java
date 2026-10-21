@@ -54,6 +54,9 @@ public class ModConfig {
 
     public boolean hasForcedInitialVolume = false;
 
+    // FirstSongs.key of every first song that has been heard
+    public List<String> playedFirstSongs = new ArrayList<>();
+
     public static Screen createScreen(Screen parent) {
         return new VanillaConfigScreen(parent, 0, -1);
     }
@@ -87,7 +90,7 @@ public class ModConfig {
         private int detailsScroll;
 
         private VanillaConfigScreen(Screen parent, int page, int selectedIndex) {
-            super(Component.literal("Reactive Music"));
+            super(Component.literal("Reactive Music Fork"));
             this.parent = parent;
             this.page = page;
             RMSongpackLoader.fetchAvailableSongpacks();

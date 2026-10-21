@@ -3,7 +3,7 @@ plugins {
 }
 
 base {
-	archivesName = 'reactivemusic'
+	archivesName = 'reactive-music-fork'
 }
 
 repositories {

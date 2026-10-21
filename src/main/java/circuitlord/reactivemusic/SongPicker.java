@@ -61,7 +61,7 @@ public final class SongPicker {
 
     private static final Random rand = new Random();
 
-    private static List<String> recentlyPickedSongs = new ArrayList<>();
+    static List<String> recentlyPickedSongs = new ArrayList<>();
 
     public static Long TIME_FOR_FORGET_DAMAGE_SOURCE = 200L;
 
@@ -439,7 +439,10 @@ public final class SongPicker {
     }
 
 
-    static String pickRandomSong(List<String> songs) {
+    static String pickRandomSong(List<String> allSongs) {
+
+        List<String> songs = new ArrayList<>(allSongs);
+        songs.removeAll(PlayerThread.unplayableSongs);
 
         if (songs.isEmpty()) {
             return null;
@@ -465,15 +468,19 @@ public final class SongPicker {
         }
 
 
+        rememberPicked(picked);
+
+
+        return picked;
+    }
+
+    static void rememberPicked(String song) {
         // only track the past X songs
         if (recentlyPickedSongs.size() >= 8) {
             recentlyPickedSongs.remove(0);
         }
 
-        recentlyPickedSongs.add(picked);
-
-
-        return picked;
+        recentlyPickedSongs.add(song);
     }
 
 

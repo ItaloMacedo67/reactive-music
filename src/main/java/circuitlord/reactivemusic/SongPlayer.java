@@ -8,6 +8,9 @@ import java.io.IOException;
 // Plays one song on the player thread. The game thread asks it to stop and sets the volume on its audio device.
 public interface SongPlayer {
 
+	// before play()
+	void startAt(float seconds) throws IOException, JavaLayerException;
+
 	void play() throws IOException, JavaLayerException;
 
 	boolean getComplete();

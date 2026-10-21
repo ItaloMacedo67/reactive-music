@@ -32,6 +32,9 @@ public class RMRuntimeEntry {
 
     public List<String> songs = new ArrayList<>();
 
+    public String firstSong = null;
+    public float firstSongStart = 0;
+
     public String eventString = "";
 
     public String errorString = "";
@@ -56,6 +59,9 @@ public class RMRuntimeEntry {
         if (songpackEntry.songs != null) {
             Entry.songs = Arrays.stream(songpackEntry.songs).toList();
         }
+
+        Entry.firstSong = songpackEntry.firstSong;
+        Entry.firstSongStart = songpackEntry.firstSongStart;
 
         for (int i = 0; i < songpackEntry.events.length; i++) {
             Entry.eventString += songpackEntry.events[i] + "_";

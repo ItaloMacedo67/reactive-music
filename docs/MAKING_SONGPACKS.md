@@ -72,6 +72,17 @@ There are also a couple of other advanced params you can use:
 
 `(float) forceChance` (default 1.0f) If forceStop/Start is enabled, what is the chance it happens? Good for events where you only want the music to switch sometimes.
 
+`(String) firstSong` Plays instead of a random song the first time this entry plays after the mod is installed, like a theme for the first time the game opens. It counts as played once it has been heard for 10 seconds, so a game closed right away or an intro that stops the music doesn't use it up. `(float) firstSongStart` (default 0) starts it that many seconds in.
+
+```
+  - events: [ "MAIN_MENU" ]
+    firstSong: "MainTheme"
+    firstSongStart: 95
+    songs:
+      - "MainTheme"
+      - "Clarity"
+```
+
 <br><br>
 
 
@@ -233,7 +244,7 @@ Fortress detection example:
 A song doesn't have to be in the songpack's `music` folder:
 
 - `minecraft:music/game/sweden` is one of Minecraft's own songs, named the way `sounds.json` names it. It plays from the game's own files, so a resource pack that replaces the song doesn't change it.
-- `Some Pack.zip/assets/minecraft/sounds/music/game/track.ogg` is a file inside another zip in the `resourcepacks` folder. That pack doesn't need to be enabled, it only has to be there. Songs from a pack that isn't there are skipped, with one warning for the whole pack.
+- `Some Pack.zip/assets/minecraft/sounds/music/game/track.ogg` is a file inside another zip in the `resourcepacks` folder. That pack doesn't need to be enabled, it only has to be there, and it's also found as `Some Pack.zip.disabled`, the name Prism Launcher gives a pack it turns off. Songs from a pack that isn't there are skipped, with one warning for the whole pack.
 
 This lets a songpack use music it can't share itself.
 

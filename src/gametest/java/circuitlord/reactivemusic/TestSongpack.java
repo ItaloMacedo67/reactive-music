@@ -22,11 +22,14 @@ final class TestSongpack {
 	static final String WITH_MISSING_FILES = "Test Songpack With Missing Files";
 	static final String QUIET_SONG = "Quiet";
 	static final String OTHER_PACK_SONG = "Other Test Pack.zip/assets/minecraft/sounds/music/quiet.ogg";
+	// the songpack names it Disabled Test Pack.zip, the file is turned off the way Prism Launcher does it
+	static final String DISABLED_PACK_SONG = "Disabled Test Pack.zip/assets/minecraft/sounds/music/quiet.ogg";
+	static final String BROKEN_SONG = "Broken";
 	static final String GAME_SONG = "minecraft:music/menu/moog_city_2";
 	static final String SWAPPING_PACK_ID = "file/Swapped Test Music";
 
 	private static final String FOLDER = "ReactiveMusicTest";
-	private static final String[] FILES = {"ReactiveMusic.yaml", "ReactiveMusicMissing.yaml", "music/Silence.mp3", "music/Quiet.ogg"};
+	private static final String[] FILES = {"ReactiveMusic.yaml", "ReactiveMusicMissing.yaml", "music/Silence.mp3", "music/Quiet.ogg", "music/Broken.ogg"};
 	private static final String QUIET_OGG = "/test-songpack/music/Quiet.ogg";
 	private static final String PACK_MCMETA = """
 			{"pack": {"description": "Reactive Music test", "min_format": 1, "max_format": 999}}""";
@@ -68,6 +71,7 @@ final class TestSongpack {
 				copyResource("/test-songpack/" + file, folder.resolve(file));
 			}
 			writeOtherPack(resourcePacks.resolve(OTHER_PACK_SONG.substring(0, OTHER_PACK_SONG.indexOf('/'))));
+			writeOtherPack(resourcePacks.resolve(DISABLED_PACK_SONG.substring(0, DISABLED_PACK_SONG.indexOf('/')) + ".disabled"));
 			writeSwappingPack(resourcePacks.resolve(SWAPPING_PACK_ID.substring("file/".length())));
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
