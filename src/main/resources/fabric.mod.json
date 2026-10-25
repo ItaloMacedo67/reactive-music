@@ -3,7 +3,7 @@
 	"id": "reactivemusic",
 	"version": "${version}",
 	"name": "Reactive Music Fork",
-	"description": "A fork of Reactive Music by CircuitLord, ported to 26.3 by Italo. Makes Minecraft's music dynamic and reactive, with songs from songpacks in the resourcepacks folder.",
+	"description": "A fork of Reactive Music by CircuitLord, ported to 26.3 by Italo. Makes Minecraft's music dynamic and reactive, with songs from songpacks in the resourcepacks folder. The fork was made with AI: all of its changes to the code and the text. The icon is the original's. Full credits and more about the AI use in CREDITS_reactivemusic.txt inside the jar.",
 	"authors": [
 		"CircuitLord"
 	],

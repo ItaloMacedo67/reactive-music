@@ -20,6 +20,14 @@ An unofficial port of [Reactive Music](https://modrinth.com/mod/reactive-music) 
 - A song that can't be read is skipped. Before, it stopped all music until the game restarted.
 - An entry can have a `firstSong` that plays the first time the entry plays after the mod is installed, from any point of the song.
 
+## AI use
+
+I made this fork with an AI, Claude Code. This is only about what the fork changed, the rest of the mod is CircuitLord's.
+
+- **Code**: all of the fork's changes. The AI ported the mod to 26.3 and wrote the fixes, the new features listed above and the tests.
+- **Text**: the AI wrote the fork's part of this README, the credits file, and what's new in [Making Songpacks](docs/MAKING_SONGPACKS.md) and its template. The rest of the text is CircuitLord's.
+- **Icon**: the original's, unchanged.
+
 ## Download
 
 The latest jar is on the [releases page](https://github.com/ItaloMacedo67/reactive-music/releases/latest). It needs Fabric API.
